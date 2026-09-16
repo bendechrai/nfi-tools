@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nfi: let the AI set your secrets without ever reading them</title>
+<meta name="description" content="nfi is a CLI and MCP server that lets an AI assistant add secrets to .env, JSON, YAML or TOML files. You enter the value in a browser prompt; the AI only ever sees the key name.">
+<link rel="canonical" href="https://bendechrai.github.io/nfi-tools/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="nfi">
+<meta property="og:title" content="nfi: let the AI set your secrets without ever reading them">
+<meta property="og:description" content="CLI and MCP server for secrets in .env, JSON, YAML and TOML. The value goes from your browser to the file; the AI only sees the key name.">
+<meta property="og:url" content="https://bendechrai.github.io/nfi-tools/">
+<meta property="og:image" content="https://bendechrai.github.io/nfi-tools/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="nfi: the AI adds your secrets and never reads them. A .env line with the value redacted.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@bendechrai">
+<meta name="twitter:creator" content="@bendechrai">
+<meta name="twitter:title" content="nfi: let the AI set your secrets without ever reading them">
+<meta name="twitter:description" content="CLI and MCP server for secrets in .env, JSON, YAML and TOML. The value goes from your browser to the file; the AI only sees the key name.">
+<meta name="twitter:image" content="https://bendechrai.github.io/nfi-tools/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF8F3;
+    --ink: #111111;
+    --ink-2: #5A5650;
+    --rule: #DAD6CC;
+    --seal: #D9381E;
+    --card: #FFFFFF;
+    --bar: #111111;
+    --term: #111111;
+    --term-fg: #EDE9E0;
+    --term-dim: #8C877D;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141312;
+      --ink: #EDE9E0;
+      --ink-2: #A39E93;
+      --rule: #2C2A26;
+      --seal: #FF5A3C;
+      --card: #1C1A18;
+      --bar: #EDE9E0;
+      --term: #060606;
+      --term-fg: #EDE9E0;
+      --term-dim: #7E786E;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 15.5px; line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: "Instrument Serif", Georgia, "Times New Roman", serif; }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--seal); outline-offset: 3px; }
+  code { font-family: inherit; }
+  img { max-width: 100%; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* redaction */
+  .redact {
+    display: inline-block; background: var(--bar); color: transparent;
+    border-radius: 2px; vertical-align: baseline; user-select: none;
+  }
+
+  /* nav */
+  nav.top { display: flex; align-items: center; justify-content: space-between; padding: 26px 0; border-bottom: 1px solid var(--rule); }
+  .brand { font-weight: 700; font-size: 16px; text-decoration: none; letter-spacing: .02em; }
+  .brand .v { color: var(--ink-2); font-weight: 400; margin-left: 10px; }
+  nav.top ul { list-style: none; display: flex; gap: 26px; margin: 0; padding: 0; font-size: 14px; }
+  nav.top ul a { text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.top ul a:hover { border-bottom-color: var(--ink); }
+
+  /* hero */
+  .hero { padding: 72px 0 40px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: end; }
+  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; gap: 40px; } }
+  h1 {
+    font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
+    font-size: clamp(46px, 7.2vw, 96px); line-height: .96; letter-spacing: -.02em;
+    margin: 0 0 26px; max-width: 12ch;
+  }
+  h1 em { font-style: italic; color: var(--seal); }
+  .lede { font-size: 16px; color: var(--ink-2); max-width: 52ch; margin: 0 0 34px; }
+  .install { display: inline-flex; align-items: center; gap: 14px; background: var(--term); color: var(--term-fg); padding: 13px 16px; border-radius: 6px; font-size: 15px; }
+  .install .dim { color: var(--term-dim); }
+  .install button { background: transparent; border: 1px solid var(--term-dim); color: var(--term-fg); border-radius: 4px; padding: 4px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+  .install button:hover { border-color: var(--term-fg); }
+
+  /* the envelope: hero right */
+  .envfile {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 22px 24px;
+    font-size: 14.5px; line-height: 1.9; position: relative; box-shadow: 0 1px 0 var(--rule);
+  }
+  .envfile .fn { position: absolute; top: -11px; left: 18px; background: var(--paper); padding: 0 8px; font-size: 12px; color: var(--ink-2); }
+  .envfile .c { color: var(--ink-2); }
+  .envfile .k { color: var(--ink); }
+  .envfile .new { color: var(--seal); }
+  .envfile .redact { width: 15ch; height: 1em; vertical-align: -.12em; overflow: hidden; animation: reveal .9s steps(15) .6s both; }
+  @keyframes reveal { from { width: 0; } }
+  @media (prefers-reduced-motion: reduce) { .envfile .redact { animation: none; } }
+  .envfile .caption { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--rule); font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+
+  /* sections */
+  section { padding: 84px 0 0; }
+  h2 {
+    font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
+    font-size: clamp(34px, 4.4vw, 52px); line-height: 1.02; letter-spacing: -.02em; margin: 0 0 22px; max-width: 22ch;
+  }
+  p { margin: 0 0 16px; max-width: 62ch; }
+  p.muted { color: var(--ink-2); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 880px) { .two { grid-template-columns: 1fr; gap: 30px; } }
+
+  /* exchange: three party transcript */
+  .exchange { border-top: 1px solid var(--rule); }
+  .exchange .row { display: grid; grid-template-columns: 110px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+  .exchange .who { font-size: 12px; color: var(--ink-2); padding-top: 4px; }
+  .exchange .who.you { color: var(--seal); }
+  .exchange .msg { font-size: 15px; }
+  .exchange .cmd { background: var(--term); color: var(--term-fg); padding: 10px 14px; border-radius: 5px; display: inline-block; }
+  .exchange .form {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; max-width: 420px;
+  }
+  .exchange .form label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+  .exchange .form .field { border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; letter-spacing: .25em; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .exchange .form .field span:last-child { letter-spacing: 0; font-size: 11px; color: var(--ink-2); border: 1px solid var(--rule); border-radius: 3px; padding: 1px 6px; }
+  .exchange .form .btn { margin-top: 12px; display: inline-block; background: var(--ink); color: var(--paper); padding: 6px 12px; border-radius: 4px; font-size: 13px; }
+
+  /* commands */
+  .cmds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  @media (max-width: 720px) { .cmds { grid-template-columns: 1fr; } }
+  .cmds div { background: var(--card); padding: 20px 22px; }
+  .cmds b { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .cmds code { display: block; font-size: 13.5px; color: var(--ink); margin: 2px 0; white-space: nowrap; overflow-x: auto; }
+  .cmds small { display: block; font-size: 13px; color: var(--ink-2); margin-top: 8px; font-family: "Instrument Serif", Georgia, serif; font-size: 17px; line-height: 1.35; }
+
+  /* formats strip */
+  .formats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .formats span { border: 1px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-size: 13.5px; }
+
+  /* security ledger */
+  ol.ledger { list-style: none; margin: 0; padding: 0; counter-reset: n; border-top: 1px solid var(--rule); }
+  ol.ledger li { counter-increment: n; position: relative; padding: 14px 0 14px 58px; border-bottom: 1px solid var(--rule); font-size: 14.5px; }
+  ol.ledger li::before { content: counter(n, decimal-leading-zero); position: absolute; left: 0; top: 17px; color: var(--seal); font-size: 12px; }
+
+  /* fallback chain */
+  .chain { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 720px) { .chain { grid-template-columns: 1fr; } }
+  .chain div { border-left: 2px solid var(--ink); padding: 4px 0 4px 16px; }
+  .chain b { display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .chain p { font-size: 14px; color: var(--ink-2); margin: 0; }
+
+  /* mcp */
+  pre.term { background: var(--term); color: var(--term-fg); border-radius: 8px; padding: 20px 22px; margin: 0; font-size: 14px; line-height: 1.7; overflow-x: auto; }
+  pre.term .c { color: var(--term-dim); }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .tools code { background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 9px; font-size: 13px; }
+
+  footer { margin-top: 100px; padding: 30px 0 48px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; font-size: 13.5px; color: var(--ink-2); }
+  footer a { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="top" aria-label="Main">
+    <a class="brand" href="#">nfi<span class="v" id="version">v0.2.1</span></a>
+    <ul>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#commands">Commands</a></li>
+      <li><a href="#mcp">MCP</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="https://github.com/bendechrai/nfi-tools">GitHub</a></li>
+    </ul>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>The AI adds your secrets. It <em>never</em> reads them.</h1>
+      <p class="lede">Tell your assistant to put a key in <code>.env</code>. nfi opens a browser prompt, you paste the value (password managers work), and it lands in the file. The AI is told one thing: the key was written.</p>
+      <div class="install">
+        <span><span class="dim">$</span> npm install -g nfi-tools</span>
+        <button type="button" data-copy="npm install -g nfi-tools">copy</button>
+      </div>
+    </div>
+
+    <div class="envfile" aria-label="Example .env file with the new secret redacted">
+      <span class="fn">.env</span>
+      <div><span class="c"># app</span></div>
+      <div><span class="k">PORT</span>=3000</div>
+      <div><span class="k">DATABASE_URL</span>=postgres://localhost/app</div>
+      <div><span class="k new">STRIPE_SECRET_KEY</span>=<span class="redact">sk_live_51Hx9wQ</span></div>
+      <div class="caption">What the AI saw of that last line: <code>STRIPE_SECRET_KEY</code>, and a confirmation. Nothing after the equals sign.</div>
+    </div>
+  </header>
+
+  <section id="how">
+    <h2>Three parties. One of them is kept out of the room.</h2>
+    <div class="exchange">
+      <div class="row">
+        <div class="who you">you</div>
+        <div class="msg serif" style="font-size:20px">"Add my Stripe secret key to .env."</div>
+      </div>
+      <div class="row">
+        <div class="who">assistant</div>
+        <div class="msg"><span class="cmd">nfi set .env STRIPE_SECRET_KEY</span></div>
+      </div>
+      <div class="row">
+        <div class="who">nfi</div>
+        <div class="msg">
+          <div class="form" aria-label="Browser prompt">
+            <label>STRIPE_SECRET_KEY</label>
+            <div class="field"><span>••••••••••••••••••••</span><span>autofill</span></div>
+            <span class="btn">Save to .env</span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="who">nfi</div>
+        <div class="msg">Wrote 1 secret to .env</div>
+      </div>
+      <div class="row">
+        <div class="who">assistant</div>
+        <div class="msg serif" style="font-size:20px">"Done. STRIPE_SECRET_KEY is set."</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:18px">The prompt is served from a temporary localhost server with a one-time token. The value goes from that page to the file and nowhere else: not stdout, not stderr, not the tool result, not the context window.</p>
+  </section>
+
+  <section id="commands">
+    <h2>Everything you'd do to a secrets file, without looking at the secrets.</h2>
+    <div class="cmds">
+      <div>
+        <b>set</b>
+        <code>nfi set .env STRIPE_SECRET_KEY</code>
+        <code>nfi set .env STRIPE_SECRET_KEY DATABASE_URL</code>
+        <code>nfi set config.json database.password</code>
+        <small>One form for several keys. Dot notation reaches into JSON, YAML and TOML.</small>
+      </div>
+      <div>
+        <b>generate</b>
+        <code>nfi generate SESSION_SECRET .env</code>
+        <code>nfi generate APP_KEY .env --template uuid</code>
+        <code>nfi generate TOKEN .env --template base64:32</code>
+        <small>Random secrets the AI never needs to see either. Hex by default, 64 characters.</small>
+      </div>
+      <div>
+        <b>has, keys, diff</b>
+        <code>nfi has API_KEY .env</code>
+        <code>nfi keys config.json --depth 1</code>
+        <code>nfi diff .env .env.example</code>
+        <small>Names, presence and gaps. Values never print.</small>
+      </div>
+      <div>
+        <b>copy, remove</b>
+        <code>nfi copy DATABASE_URL .env config.json --path database.url</code>
+        <code>nfi remove API_KEY .env</code>
+        <small>Move a value between files without it passing through anything that logs.</small>
+      </div>
+    </div>
+    <div class="formats" aria-label="Supported formats">
+      <span>.env</span><span>.json</span><span>.yaml</span><span>.toml</span><span>--format to override</span>
+    </div>
+    <p class="muted" style="margin-top:16px">.env handling keeps your comments, blank lines, <code>export</code> prefixes and inline comments where they were.</p>
+  </section>
+
+  <section id="mcp">
+    <div class="two">
+      <div>
+        <h2>Or skip the shell: run it as an MCP server.</h2>
+        <p>For clients without shell access, such as Claude Desktop or Cursor, register nfi once and the assistant gets the same operations as tools. The browser prompt still opens on your side; if it can't, you get a link to click instead.</p>
+        <div class="tools" aria-label="MCP tools">
+          <code>store_secret</code><code>check_secret</code><code>list_keys</code><code>diff_keys</code><code>generate_secret</code><code>remove_secret</code><code>copy_secret</code><code>describe_capabilities</code>
+        </div>
+      </div>
+      <pre class="term"><span class="c"># auto-detects the client</span>
+$ nfi mcp install
+
+<span class="c"># or be explicit</span>
+$ nfi mcp install --client cursor
+
+<span class="c"># no install</span>
+$ npx nfi-tools set .env STRIPE_SECRET_KEY</pre>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="two">
+      <div>
+        <h2>The value has exactly one path, and it's short.</h2>
+        <p class="muted">Browser prompt first. If it can't open (remote session, MCP without a display), a clickable URL. If there's no browser at all, a masked prompt on <code>/dev/tty</code>, which is the one input the assistant can't feed.</p>
+        <div class="chain">
+          <div><b>Browser</b><p>Localhost page with password fields. Autofill from 1Password, Bitwarden, LastPass or the browser.</p></div>
+          <div><b>URL relay</b><p>Same page, delivered as a link when it can't be opened for you.</p></div>
+          <div><b>TTY</b><p>Direct <code>/dev/tty</code> read with masked input. If there's no TTY either, nfi errors instead of reading stdin.</p></div>
+        </div>
+      </div>
+      <ol class="ledger">
+        <li>Secret values never appear in stdout, stderr or tool return values.</li>
+        <li>Browser input goes through a temporary localhost server with a one-time token.</li>
+        <li>Token comparison is constant-time.</li>
+        <li>POST submissions are checked against the Origin header.</li>
+        <li>Request bodies are size-limited.</li>
+        <li>TTY fallback reads <code>/dev/tty</code> directly, never stdin.</li>
+        <li>Warns when the target file isn't covered by <code>.gitignore</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <span>nfi-tools is MIT licensed. Node.js 20+, or Bun.</span>
+    <span><a href="https://www.npmjs.com/package/nfi-tools">npm</a> &nbsp;&nbsp; <a href="https://github.com/bendechrai/nfi-tools">GitHub</a> &nbsp;&nbsp; <a href="https://github.com/bendechrai/nfi-tools#readme">README</a></span>
+  </footer>
+
+</div>
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      try {
+        navigator.clipboard.writeText(b.dataset.copy).then(function () {
+          b.textContent = 'copied';
+          setTimeout(function () { b.textContent = 'copy'; }, 1600);
+        });
+      } catch (e) {}
+    });
+  });
+
+  // Show the currently published version rather than a hardcoded one.
+  fetch('https://registry.npmjs.org/nfi-tools/latest')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (pkg) {
+      if (pkg && typeof pkg.version === 'string') {
+        document.getElementById('version').textContent = 'v' + pkg.version;
+      }
+    })
+    .catch(function () {});
+</script>
+</body>
+</html>
