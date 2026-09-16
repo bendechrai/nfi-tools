@@ -25,7 +25,7 @@ npx nfi-tools set .env STRIPE_SECRET_KEY
 5. The tool writes `STRIPE_SECRET_KEY=sk_live_...` to `.env`
 6. The AI only sees: "Wrote 1 secret to .env"
 
-The secret never enters the AI's context window. The browser-based input also means you can autofill from 1Password, Bitwarden, LastPass, or your browser's built-in password manager.
+The secret never enters the AI's context window. The browser-based input also means you can paste straight from 1Password, Bitwarden, LastPass, or your browser's built-in password manager. Autofill is deliberately suppressed on the page, since the one-off URL never matches a saved login anyway.
 
 ## Commands
 
@@ -163,7 +163,7 @@ CLI flags always override config values.
 
 ## Input fallback chain
 
-1. **Browser** - opens a localhost page with password fields (supports password manager autofill)
+1. **Browser** - opens a localhost page with password fields (paste from your password manager; autofill is suppressed)
 2. **URL relay** - if the browser can't auto-open (MCP/remote), returns a clickable URL
 3. **TTY** - direct `/dev/tty` prompt with masked input (SSH sessions, headless environments)
 

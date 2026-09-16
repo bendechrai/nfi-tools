@@ -413,7 +413,7 @@ export async function startMcpServer(): Promise<void> {
           "Secret values are never returned in tool responses",
           "Use check_secret to verify a secret was written - never read the file directly",
           "store_secret returns a URL that the user must open to enter values",
-          "The browser UI supports password manager autofill",
+          "The browser UI lets the user paste from a password manager; autofill is deliberately suppressed since the one-off URL never matches a saved login",
           "Dot notation is used for nested keys in structured formats (e.g., 'database.password')",
         ],
       };

@@ -113,8 +113,9 @@ Three-tier fallback chain for collecting secret values from the user:
 - Secret value transmitted only over localhost, never leaves the machine
 
 ### Password Manager Integration
-- Browser-based input allows autofill from 1Password, Bitwarden, LastPass, macOS Keychain, etc.
-- This is a key advantage of the browser approach over native OS dialogs
+- Browser-based input lets the user paste from 1Password, Bitwarden, LastPass, macOS Keychain, etc.
+- Autofill/save-password prompts are deliberately suppressed (`data-1p-ignore`, `data-lpignore`, `data-bwignore`, `data-form-type="other"`, `autocomplete="off"`) since the one-off localhost/tunnel URL never matches a saved login and would only compete with pasting
+- Pasting into the browser field is still a key advantage over native OS dialogs
 
 ## MCP Server
 

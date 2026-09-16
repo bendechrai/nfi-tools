@@ -137,7 +137,7 @@ export function createBrowserPromptSession(options: BrowserPromptOptions): {
       res.writeHead(200, {
         "Content-Type": "text/html",
         "Cache-Control": "no-store, no-cache, must-revalidate",
-        "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
+        "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:",
       });
       res.end(pageHtml);
       return;
