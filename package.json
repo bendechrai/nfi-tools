@@ -1,6 +1,6 @@
 {
   "name": "nfi-tools",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "CLI tool and MCP server for handling sensitive information without exposing values to AI assistants",
   "type": "module",
   "bin": {
